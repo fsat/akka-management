@@ -1,0 +1,51 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: appka
+  name: appka
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: appka
+  template:
+    metadata:
+      labels:
+        app: appka
+    spec:
+      containers:
+      - name: appka
+        image: akka-management-joining:latest
+        imagePullPolicy: Always
+        env:
+        - name: HOST_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        livenessProbe:
+          tcpSocket:
+            port: 2551
+        ports:
+        # akka remoting
+        - containerPort: 2551
+          protocol: TCP
+        # akka-management bootstrap
+        - containerPort: 8558
+          protocol: TCP
+        # external http
+        - containerPort: 8080
+          protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: appka-service
+spec:
+  selector:
+    app: appka
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9376
